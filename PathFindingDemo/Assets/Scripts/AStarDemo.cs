@@ -15,6 +15,7 @@ public class AStarDemo : MonoBehaviour
 
 	State _state;
 
+	public GameObject nodeRoot;
 	public MapNode nodeTemplate;
 	public int cellCountX;
 	public int cellCountY;
@@ -23,14 +24,15 @@ public class AStarDemo : MonoBehaviour
 
 	MapNode srcNode;
 	MapNode dstNode;
-
-	// public LineRenderer 
+	
 
 	void Start ()
 	{
 		nodeGrid = new MapNode[cellCountX, cellCountY];
 
 		Vector3 cellSize = nodeTemplate.Size * 2.2f;
+
+		nodeRoot = new GameObject("NodeRoot");
 
 		// 初始化Grid
 		for (int x = 0; x < cellCountX; ++x)
@@ -39,6 +41,7 @@ public class AStarDemo : MonoBehaviour
 			{
 				var node = Instantiate<MapNode>(nodeTemplate);
 				node.coord = new Int2(x, y);
+				node.transform.SetParent(nodeRoot.transform);
 				node.transform.position = new Vector3(cellSize.x * x, cellSize.y * y, 0);
 				node.State = MapNode.MapNodeState.None;
 				node.Flaged = false;
@@ -232,6 +235,13 @@ public class AStarDemo : MonoBehaviour
 
 			if (curNode == dstNode)
 			{
+				// 到达终点
+				while (curNode.parentNode != null)
+				{
+					curNode.State = MapNode.MapNodeState.Path;
+					curNode = curNode.parentNode;
+				}
+
 				Debug.Log("Search Success");
 				_state = State.DrawSource;
 				yield break;

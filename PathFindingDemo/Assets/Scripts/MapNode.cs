@@ -11,13 +11,19 @@ public class MapNode : MonoBehaviour
 		Block,
 		None,
 		Open,
-		Close
+		Close,
+		Path
 	}
 
-	Color noneColor = Color.gray;
-	Color openColor = Color.green;
-	Color closeColor = Color.red;
-	Color blockColor = Color.black;
+	public Color[] stateColors = new Color[]
+		{
+			Color.black,
+			Color.gray,
+			Color.green,
+			Color.red,
+			Color.blue
+		};
+	
 
 	void SetCubeColor(Color color)
 	{
@@ -80,20 +86,10 @@ public class MapNode : MonoBehaviour
 
 	void SetStateColor(MapNodeState state)
 	{
-		switch (state)
+		int istate = (int)state;
+		if (istate >= 0 && istate < stateColors.Length)
 		{
-			case MapNodeState.Block:
-				SetCubeColor(blockColor);
-				break;
-			case MapNodeState.None:
-				SetCubeColor(noneColor);
-				break;
-			case MapNodeState.Open:
-				SetCubeColor(openColor);
-				break;
-			case MapNodeState.Close:
-				SetCubeColor(closeColor);
-				break;
+			SetCubeColor(stateColors[istate]);
 		}
 	}
 
