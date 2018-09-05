@@ -1,7 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using MissQ;
 
 public class AStarDemo : MonoBehaviour
 {
@@ -155,6 +155,7 @@ public class AStarDemo : MonoBehaviour
 			GUILayout.Label("选择起始点");
 			if (GUILayout.Button("重新设置障碍"))
 			{
+				ClearMapGrids();
 				_state = State.DrawBlock;
 			}
 			if (GUILayout.Button("重新寻路"))
@@ -194,7 +195,7 @@ public class AStarDemo : MonoBehaviour
 		"弹出G值最小",
 		"弹出H值最小"
 	};
-
+	
 	void ClearMapGrids()
 	{
 		for (int x = 0; x < cellCountX; ++x)
@@ -289,40 +290,25 @@ public class AStarDemo : MonoBehaviour
 		}
 	}
 
+	Func<MapNode, MapNode, int> minH = (MapNode a, MapNode b) => { return a.H.CompareTo(b.H); };
+	Func<MapNode, MapNode, int> minG = (MapNode a, MapNode b) => { return a.G.CompareTo(b.G); };
+	Func<MapNode, MapNode, int> minF = (MapNode a, MapNode b) => { return a.F.CompareTo(b.F); };
+
 	MapNode GetMinNode(List<MapNode> list)
 	{
-		if (list.Count > 0)
+		if (PopMinMethod == 0)
 		{
-			int minIndex = 0;
-			for (int i = 1; i < list.Count; ++i)
-			{
-				if (PopMinMethod == 0)
-				{
-					if (list[i].F < list[minIndex].F)
-					{
-						minIndex = i;
-					}
-				}
-				else if (PopMinMethod == 1)
-				{
-					if (list[i].G < list[minIndex].G)
-					{
-						minIndex = i;
-					}
-				}
-				else if (PopMinMethod == 2)
-				{
-					if (list[i].H < list[minIndex].H)
-					{
-						minIndex = i;
-					}
-				}
-			}
-			MapNode re = list[minIndex];
-			list.RemoveAt(minIndex);
-			return re;
+			return list.PopMin(minF);
 		}
-		
+		else if (PopMinMethod == 1)
+		{
+			return list.PopMin(minG);
+		}
+		else if (PopMinMethod == 2)
+		{
+			return list.PopMin(minH);
+		}
+
 		return null;
 	}
 
@@ -363,6 +349,7 @@ public class AStarDemo : MonoBehaviour
 		return Mathf.Sqrt(x * x + y * y);
 	}
 	
+	// 估值函数
 	public float Heuristic(Int2 a, Int2 b)
 	{
 		if (HeuristicMethod == 0)
