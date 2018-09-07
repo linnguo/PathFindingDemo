@@ -1,12 +1,15 @@
-﻿using System.Collections;
+﻿using System.IO;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
 public partial class NavMeshDemo : MonoBehaviour
 {
+	public Mesh manulNavMesh;
+	public MeshFilter navMeshFilter;
 	public Material material;
-	NavMeshTriangulation? navMeshTriangulation = null;
 	NavMeshModel navMeshModel = null;
+
 
 	private void OnGUI()
 	{
@@ -14,12 +17,61 @@ public partial class NavMeshDemo : MonoBehaviour
 		{
 			ExportNavMesh();
 		}
+
+		if (GUILayout.Button("Load"))
+		{
+			LoadNavMesh();
+		}
+
+		if (Event.current != null)
+		{
+			if (Event.current.type == EventType.MouseDown)
+			{
+				var screenPos = Event.current.mousePosition;
+				screenPos.y = Screen.height - screenPos.y;
+				var ray = Camera.main.ScreenPointToRay(screenPos);
+				Plane p = new Plane(Vector3.up, 0);
+				float point;
+				if (p.Raycast(ray, out point))
+				{
+					var worldPos = ray.GetPoint(point);
+					if (navMeshModel != null)
+					{
+						int nodeClicked = -1;
+						if (navMeshModel.RayCast(worldPos, out nodeClicked))
+						{
+							var node = navMeshModel.nodes[nodeClicked];
+							node.nodeState = NodeState.Close;
+							navMeshModel.RefreshMesh();
+						}
+					}
+					
+				}
+			}
+		}
 	}
 
 	public void ExportNavMesh()
 	{
-		navMeshTriangulation = NavMesh.CalculateTriangulation();
-		navMeshModel = new NavMeshModel(navMeshTriangulation.Value);
+		NavMeshTriangulation navMeshTriangulation = NavMesh.CalculateTriangulation();
+		Vector3[] vertices = null;
+		int[] indices = null;
+		NavMeshTools.MergeVertex(navMeshTriangulation.vertices, navMeshTriangulation.indices, out vertices, out indices);
+		string objContent = NavMeshTools.SerializeToObj(vertices, indices);
+		string objPath = Path.Combine(Application.dataPath, "navmesh.obj");
+		File.WriteAllText(objPath, objContent);
+	}
+
+	public void LoadNavMesh()
+	{
+		if (manulNavMesh != null)
+		{
+			navMeshModel = new NavMeshModel(manulNavMesh.vertices, manulNavMesh.triangles);
+			if (navMeshFilter != null)
+			{
+				navMeshFilter.mesh = navMeshModel.NavRenderMesh;
+			}
+		}
 	}
 
 	private void OnPostRender()
@@ -47,15 +99,6 @@ public partial class NavMeshDemo : MonoBehaviour
 						GL.Vertex(nei.center);
 					}
 				}
-
-				GL.Vertex(node.vertices[0]);
-				GL.Vertex(node.vertices[1]);
-
-				GL.Vertex(node.vertices[1]);
-				GL.Vertex(node.vertices[2]);
-
-				GL.Vertex(node.vertices[0]);
-				GL.Vertex(node.vertices[2]);
 			}
 			
 			GL.End();
