@@ -10,6 +10,15 @@ public partial class NavMeshDemo : MonoBehaviour
 	public Material material;
 	NavMeshModel navMeshModel = null;
 
+	public enum State
+	{
+		WaitSrc,
+		WaitDst,
+		Calcing,
+	}
+	State state = State.WaitSrc;
+	Vector3 srcPos;
+	Vector3 dstPos;
 
 	private void OnGUI()
 	{
@@ -40,15 +49,39 @@ public partial class NavMeshDemo : MonoBehaviour
 						int nodeClicked = -1;
 						if (navMeshModel.RayCast(worldPos, out nodeClicked))
 						{
-							var node = navMeshModel.nodes[nodeClicked];
-							node.nodeState = NodeState.Close;
-							navMeshModel.RefreshMesh();
+							OnClickedNavMesh(worldPos);
 						}
 					}
-					
 				}
 			}
 		}
+	}
+
+	void OnClickedNavMesh(Vector3 worldPos)
+	{
+		if (state == State.WaitSrc)
+		{
+			srcPos = worldPos;
+			state = State.WaitDst;
+		}
+		else if (state == State.WaitDst)
+		{
+			dstPos = worldPos;
+			StartCoroutine(PathFindingCor());
+		}
+	}
+
+	IEnumerator PathFindingCor()
+	{
+		state = State.Calcing;
+
+		if (navMeshModel != null)
+		{
+			yield return StartCoroutine(navMeshModel.FindCor(srcPos, dstPos));
+		}
+
+		state = State.WaitSrc;
+		yield break;
 	}
 
 	public void ExportNavMesh()
@@ -88,15 +121,18 @@ public partial class NavMeshDemo : MonoBehaviour
 
 			GL.Begin(GL.LINES);
 			GL.Color(Color.red);
-			
+
+			int idx = 0;
 			foreach (var node in navMeshModel.nodes)
 			{
+				idx++;
+				idx %= 4;
 				foreach (var nei in node.neightbors)
 				{
 					if (nei != null)
 					{
 						GL.Vertex(node.center);
-						GL.Vertex(nei.center);
+						GL.Vertex(node.center + (nei.center - node.center) * 0.4f);
 					}
 				}
 			}

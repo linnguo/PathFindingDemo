@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -6,7 +7,9 @@ public enum NodeState
 {
 	None,
 	Open,
-	Close
+	Close,
+
+	Path
 }
 
 public class Node
@@ -17,7 +20,10 @@ public class Node
 	public Vector3 center;
 	public Vector3[] vertices = new Vector3[3];
 
-	public NodeState nodeState = NodeState.None;
+	public NodeState state = NodeState.None;
+	public Node parent;
+	public float H;
+	public float G;
 }
 
 public class NavMeshModel
@@ -76,10 +82,10 @@ public class NavMeshModel
 	{
 		for (int i = 0; i < nodes.Count - 1; ++i)
 		{
-			for (int j = 0; j < nodes.Count; ++j)
+			for (int j = i+1; j < nodes.Count; ++j)
 			{
-				CheckNeighbor(nodes[i], nodes[j]);
 				CheckNeighbor(nodes[j], nodes[i]);
+				CheckNeighbor(nodes[i], nodes[j]);
 			}
 		}
 	}
@@ -132,6 +138,8 @@ public class NavMeshModel
 				return Color.green;
 			case NodeState.Close:
 				return Color.red;
+			case NodeState.Path:
+				return Color.blue;
 		}
 
 		return Color.gray;
@@ -166,7 +174,7 @@ public class NavMeshModel
 			
 			for (int j = 0; j < 3; ++j)
 			{
-				meshColors[index + j] = GetStateColor(nodes[i].nodeState);
+				meshColors[index + j] = GetStateColor(nodes[i].state);
 			}
 		}
 
@@ -204,5 +212,85 @@ public class NavMeshModel
 		}
 		nodeIndex = -1;
 		return false;
+	}
+
+	public void ResetState()
+	{
+		foreach (var node in nodes)
+		{
+			node.state = NodeState.None;
+			node.G = 0;
+			node.H = 0;
+			node.parent = null;
+		}
+		RefreshMesh();
+	}
+
+	public IEnumerator FindCor(Vector3 srcPos, Vector3 dstPos)
+	{
+		int srcIdx = -1;
+		int dstIdx = -1;
+		if (!RayCast(srcPos, out srcIdx) || !RayCast(dstPos, out dstIdx))
+		{
+			yield break;
+		}
+
+		ResetState();
+
+		Node dstNode = nodes[dstIdx];
+		List<Node> open = new List<Node>();
+		open.Add(nodes[srcIdx]);
+		while (true)
+		{
+			Node minOpen = open.PopMin((Node a, Node b) => {
+				return (a.G + a.H).CompareTo(b.G + b.H);
+			});
+
+			if (minOpen == null)
+			{
+				Debug.Log("Cant found path");
+				yield break;
+			}
+
+			if (minOpen == dstNode)
+			{
+				while (minOpen != null)
+				{
+					minOpen.state = NodeState.Path;
+					minOpen = minOpen.parent;
+				}
+				RefreshMesh();
+				Debug.Log("Path found Success");
+				yield break;
+			}
+
+			minOpen.state = NodeState.Close;
+			foreach (var nei in minOpen.neightbors)
+			{
+				if (nei != null)
+				{
+					if (nei.state == NodeState.None)
+					{
+						nei.state = NodeState.Open;
+						nei.G = minOpen.G + Vector3.Distance(minOpen.center, nei.center);
+						nei.H = Vector3.Distance(nei.center, dstNode.center);
+						nei.parent = minOpen;
+						open.Add(nei);
+					}
+					else if (nei.state == NodeState.Open)
+					{
+						var curG = minOpen.G + Vector3.Distance(minOpen.center, nei.center);
+						if (curG < nei.G)
+						{
+							nei.G = curG;
+							nei.parent = minOpen;
+						}
+					}
+				}
+			}
+
+			RefreshMesh();
+			yield return new WaitForSeconds(0.2f);
+		}
 	}
 }
