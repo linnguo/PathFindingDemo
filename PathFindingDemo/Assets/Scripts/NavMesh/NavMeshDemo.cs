@@ -81,7 +81,7 @@ public partial class NavMeshDemo : MonoBehaviour
 		if (navMeshModel != null)
 		{
 			yield return StartCoroutine(navMeshModel.FindCor(srcPos, dstPos));
-			yield return StartCoroutine(navMeshModel.PathCor(srcPos, dstPos));
+			yield return StartCoroutine(navMeshModel.CalcCornersCor(srcPos, dstPos));
 		}
 
 		state = State.WaitSrc;
@@ -125,38 +125,7 @@ public partial class NavMeshDemo : MonoBehaviour
 
 			GL.Begin(GL.LINES);
 			GL.Color(Color.red);
-
-			/*
-			foreach (var node in navMeshModel.nodes)
-			{
-				foreach (var nei in node.neightbors)
-				{
-					if (nei != null)
-					{
-						GL.Vertex(node.center);
-						GL.Vertex(node.center + (nei.center - node.center) * 0.4f);
-					}
-				}
-			}
-			*/
 			
-			/*
-			GL.Color(Color.white);
-			for (int i = 0; i < navMeshModel.gates.Count; ++i)
-			{
-				GL.Vertex(navMeshModel.gates[i].s0);
-				GL.Vertex(navMeshModel.gates[i].s1);
-			}
-			*/
-
-			
-			
-			GL.Color(Color.yellow);
-			for (int i = 0; i < navMeshModel.testCors.Count; ++i)
-			{
-				GL.Vertex(navMeshModel.testCors[i]);
-			}
-
 			GL.Color(Color.red);
 			GL.Vertex(navMeshModel.curCorner);
 			GL.Vertex(navMeshModel.left);
@@ -174,6 +143,5 @@ public partial class NavMeshDemo : MonoBehaviour
 
 			GL.End();
 		}
-		
 	}
 }

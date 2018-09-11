@@ -225,6 +225,7 @@ public class NavMeshModel
 		RefreshMesh();
 	}
 
+	public List<Node> pathNodes = new List<Node>();
 	public IEnumerator FindCor(Vector3 srcPos, Vector3 dstPos)
 	{
 		int srcIdx = -1;
@@ -300,7 +301,6 @@ public class NavMeshModel
 	public Vector3 left;
 	public Vector3 right;
 	
-	public List<Node> pathNodes = new List<Node>();
 	public List<Vector3> corners = new List<Vector3>();
 
 	public struct Segment
@@ -309,8 +309,6 @@ public class NavMeshModel
 		public Vector3 right;
 	}
 	public List<Segment> gates = new List<Segment>();
-
-	public List<Vector3> testCors = new List<Vector3>();
 
 	void InitGates()
 	{
@@ -346,40 +344,28 @@ public class NavMeshModel
 	/// <param name="dstPos"></param>
 	/// <param name="nodeList">需要包含起点和终点的node</param>
 	/// <returns></returns>
-	public IEnumerator PathCor(Vector3 srcPos, Vector3 dstPos)
+	public IEnumerator CalcCornersCor(Vector3 srcPos, Vector3 dstPos)
 	{
-		testCors.Clear();
 		corners.Clear();
-		
 		corners.Add(srcPos);
 
 		curCorner = srcPos;
+
 		left = curCorner;
 		right = curCorner;
-
-		yield return new WaitForSeconds(0.5f);
-
-		InitGates();
 
 		int leftIdx = 0;
 		int rightIdx = 0;
 
+		yield return new WaitForSeconds(0.5f);
+
+		InitGates();
+		
 		for (int i = 0; i < gates.Count; ++i)
 		{
-			Debug.LogError("PathCor For " + i);
-
 			Vector3 curLeft = gates[i].left;
 			Vector3 curRight = gates[i].right;
 			
-			testCors.Add(curCorner);
-			testCors.Add(left);
-
-			testCors.Add(curCorner);
-			testCors.Add(right);
-
-			testCors.Add(left);
-			testCors.Add(right);
-
 			yield return new WaitForSeconds(0.2f);
 			
 			if (left == curLeft)
@@ -457,7 +443,6 @@ public class NavMeshModel
 		}
 
 		corners.Add(dstPos);
-		Debug.LogError("PathCor End");
 		yield break;
 	}
 
