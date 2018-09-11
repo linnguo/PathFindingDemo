@@ -379,7 +379,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1319092003}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.02, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -544,7 +544,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   manulNavMesh: {fileID: 4300000, guid: 42b18c9fdbd4dd24c9f10bd6d9f4e9e9, type: 3}
   navMeshFilter: {fileID: 1319092005}
-  material: {fileID: 0}
+  material: {fileID: 2100000, guid: e5b256478068e2d46a10ace76ab0e83f, type: 2}
 --- !u!1 &2115345500
 GameObject:
   m_ObjectHideFlags: 0

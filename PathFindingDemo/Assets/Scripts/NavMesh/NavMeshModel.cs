@@ -104,7 +104,6 @@ public class NavMeshModel
 	}
 
 	int[] aInb = new int[VertexPerNode];
-	int[] bIna = new int[VertexPerNode];
 	private void CheckNeighbor(Node a, Node b)
 	{
 		for (int i = 0; i < VertexPerNode; ++i)
@@ -133,7 +132,7 @@ public class NavMeshModel
 		switch (nodeState)
 		{
 			case NodeState.None:
-				return Color.white;
+				return Color.gray;
 			case NodeState.Open:
 				return Color.green;
 			case NodeState.Close:
@@ -236,6 +235,7 @@ public class NavMeshModel
 		}
 
 		ResetState();
+		pathNodes.Clear();
 
 		Node dstNode = nodes[dstIdx];
 		List<Node> open = new List<Node>();
@@ -256,9 +256,11 @@ public class NavMeshModel
 			{
 				while (minOpen != null)
 				{
+					pathNodes.Add(minOpen);
 					minOpen.state = NodeState.Path;
 					minOpen = minOpen.parent;
 				}
+				pathNodes.Reverse();
 				RefreshMesh();
 				Debug.Log("Path found Success");
 				yield break;
@@ -292,5 +294,209 @@ public class NavMeshModel
 			RefreshMesh();
 			yield return new WaitForSeconds(0.2f);
 		}
+	}
+
+	public Vector3 curCorner;
+	public Vector3 left;
+	public Vector3 right;
+	
+	public List<Node> pathNodes = new List<Node>();
+	public List<Vector3> corners = new List<Vector3>();
+
+	public struct Segment
+	{
+		public Vector3 left;
+		public Vector3 right;
+	}
+	public List<Segment> gates = new List<Segment>();
+
+	public List<Vector3> testCors = new List<Vector3>();
+
+	void InitGates()
+	{
+		gates.Clear();
+		for (int i = 0; i < pathNodes.Count - 1; ++i)
+		{
+			var curNode = pathNodes[i];
+			var nexNode = pathNodes[i + 1];
+
+			for (int j = 0; j < 3; ++j)
+			{
+				var nei = curNode.neightbors[j];
+				if (nei == nexNode)
+				{
+					Vector3 curLeft;
+					Vector3 curRight;
+
+					DivLeftRight(curNode.center, curNode.vertices[j], curNode.vertices[(j + 1) % 3], out curLeft, out curRight);
+					Segment seg = new Segment();
+					seg.left = curLeft;
+					seg.right = curRight;
+					gates.Add(seg);
+					break;
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// 拐角点计算路径
+	/// </summary>
+	/// <param name="srcPos"></param>
+	/// <param name="dstPos"></param>
+	/// <param name="nodeList">需要包含起点和终点的node</param>
+	/// <returns></returns>
+	public IEnumerator PathCor(Vector3 srcPos, Vector3 dstPos)
+	{
+		testCors.Clear();
+		corners.Clear();
+		
+		corners.Add(srcPos);
+
+		curCorner = srcPos;
+		left = curCorner;
+		right = curCorner;
+
+		yield return new WaitForSeconds(0.5f);
+
+		InitGates();
+
+		int leftIdx = 0;
+		int rightIdx = 0;
+
+		for (int i = 0; i < gates.Count; ++i)
+		{
+			Debug.LogError("PathCor For " + i);
+
+			Vector3 curLeft = gates[i].left;
+			Vector3 curRight = gates[i].right;
+			
+			testCors.Add(curCorner);
+			testCors.Add(left);
+
+			testCors.Add(curCorner);
+			testCors.Add(right);
+
+			testCors.Add(left);
+			testCors.Add(right);
+
+			yield return new WaitForSeconds(0.2f);
+			
+			if (left == curLeft)
+			{
+				// 如果这个left和当前的值一样，不用处理
+			}
+			else if (curCorner == left)
+			{
+				// 如果当前没有合理的left
+				left = curLeft;
+				leftIdx = i;
+			}
+			else if (IsLeft(curCorner, left, curLeft))
+			{
+				// 新的左边在旧的左边的左边，不用处理
+			}
+			else if (IsRight(curCorner, right, curLeft))
+			{
+				// 新的左边在旧的右边的右边，拐点
+				curCorner = right;
+				corners.Add(curCorner);
+
+				// 回退
+				i = rightIdx;
+
+				left = curCorner;
+				right = curCorner;
+				leftIdx = i;
+				rightIdx = i;
+				continue;
+			}
+			else
+			{
+				// 新的左边在旧的左右两边之间
+				left = curLeft;
+				leftIdx = i;
+			}
+
+			if (right == curRight)
+			{
+				// 如果这个right和当前的值一样，不用处理
+			}
+			else if (curCorner == right)
+			{
+				// 如果当前没有合理的right
+				right = curRight;
+				rightIdx = i;
+			}
+			else if (IsRight(curCorner, right, curRight))
+			{
+				// 新的右边在旧的右边的右边，不用处理
+			}
+			else if (IsLeft(curCorner, left, curRight))
+			{
+				// 新的右边在旧的左边的左边，拐点
+				curCorner = left;
+				corners.Add(curCorner);
+
+				// 回退
+				i = leftIdx;
+
+				left = curCorner;
+				right = curCorner;
+				leftIdx = i;
+				rightIdx = i;
+
+				continue;
+			}
+			else
+			{
+				// 新的右边在旧的左右两边之间
+				right = curRight;
+				rightIdx = i;
+			}
+		}
+
+		corners.Add(dstPos);
+		Debug.LogError("PathCor End");
+		yield break;
+	}
+
+	// 区分左右
+	void DivLeftRight(Vector3 center, Vector3 p0, Vector3 p1, out Vector3 left, out Vector3 right)
+	{
+		p0.y = 0;
+		p1.y = 0;
+		center.y = 0;
+
+		float crossY = Vector3.Cross(p0 - center, p1 - center).y;
+
+		if (crossY > 0)
+		{
+			left = p0;
+			right = p1;
+		}
+		else
+		{
+			left = p1;
+			right = p0;
+		}
+	}
+
+	// 判断p是不是在center -> to的左边
+	bool IsLeft(Vector3 center, Vector3 to, Vector3 p)
+	{
+		center.y = 0;
+		to.y = 0;
+		p.y = 0;
+		return Vector3.Cross(to - center, p - center).y < 0;
+	}
+
+	// 判断p是不是在center -> to的左边
+	bool IsRight(Vector3 center, Vector3 to, Vector3 p)
+	{
+		center.y = 0;
+		to.y = 0;
+		p.y = 0;
+		return Vector3.Cross(to - center, p - center).y > 0;
 	}
 }

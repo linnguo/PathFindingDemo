@@ -8,6 +8,9 @@ public partial class NavMeshDemo : MonoBehaviour
 	public Mesh manulNavMesh;
 	public MeshFilter navMeshFilter;
 	public Material material;
+	
+	// public LineRenderer
+
 	NavMeshModel navMeshModel = null;
 
 	public enum State
@@ -31,7 +34,7 @@ public partial class NavMeshDemo : MonoBehaviour
 		{
 			LoadNavMesh();
 		}
-
+		
 		if (Event.current != null)
 		{
 			if (Event.current.type == EventType.MouseDown)
@@ -78,6 +81,7 @@ public partial class NavMeshDemo : MonoBehaviour
 		if (navMeshModel != null)
 		{
 			yield return StartCoroutine(navMeshModel.FindCor(srcPos, dstPos));
+			yield return StartCoroutine(navMeshModel.PathCor(srcPos, dstPos));
 		}
 
 		state = State.WaitSrc;
@@ -122,11 +126,9 @@ public partial class NavMeshDemo : MonoBehaviour
 			GL.Begin(GL.LINES);
 			GL.Color(Color.red);
 
-			int idx = 0;
+			/*
 			foreach (var node in navMeshModel.nodes)
 			{
-				idx++;
-				idx %= 4;
 				foreach (var nei in node.neightbors)
 				{
 					if (nei != null)
@@ -136,7 +138,40 @@ public partial class NavMeshDemo : MonoBehaviour
 					}
 				}
 			}
+			*/
 			
+			/*
+			GL.Color(Color.white);
+			for (int i = 0; i < navMeshModel.gates.Count; ++i)
+			{
+				GL.Vertex(navMeshModel.gates[i].s0);
+				GL.Vertex(navMeshModel.gates[i].s1);
+			}
+			*/
+
+			
+			
+			GL.Color(Color.yellow);
+			for (int i = 0; i < navMeshModel.testCors.Count; ++i)
+			{
+				GL.Vertex(navMeshModel.testCors[i]);
+			}
+
+			GL.Color(Color.red);
+			GL.Vertex(navMeshModel.curCorner);
+			GL.Vertex(navMeshModel.left);
+
+			GL.Color(Color.blue);
+			GL.Vertex(navMeshModel.curCorner);
+			GL.Vertex(navMeshModel.right);
+
+			GL.Color(Color.white);
+			for (int i = 0; i < navMeshModel.corners.Count - 1; ++i)
+			{
+				GL.Vertex(navMeshModel.corners[i]);
+				GL.Vertex(navMeshModel.corners[i + 1]);
+			}
+
 			GL.End();
 		}
 		
