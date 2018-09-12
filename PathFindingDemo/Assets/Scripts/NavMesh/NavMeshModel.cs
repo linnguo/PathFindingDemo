@@ -42,7 +42,10 @@ public class NavMeshModel
 	
 	// 节点
 	public List<Node> nodes;
-	
+
+	public Vector3 srcPos;
+	public Vector3 dstPos;
+
 	public NavMeshModel(Vector3[] aNavMeshVertice, int[] aNavMeshIndice)
 	{
 		NavMeshTools.MergeVertex(aNavMeshVertice, aNavMeshIndice, out navMeshVertice, out navMeshIndice);
@@ -223,10 +226,15 @@ public class NavMeshModel
 			node.parent = null;
 		}
 		RefreshMesh();
+
+		curCorner = Vector3.zero;
+		left = Vector3.zero;
+		right = Vector3.zero;
+		corners.Clear();
 	}
 
 	public List<Node> pathNodes = new List<Node>();
-	public IEnumerator FindCor(Vector3 srcPos, Vector3 dstPos)
+	public IEnumerator FindCor()
 	{
 		int srcIdx = -1;
 		int dstIdx = -1;
@@ -335,16 +343,17 @@ public class NavMeshModel
 				}
 			}
 		}
+
+		Segment endSeg = new Segment();
+		endSeg.left = dstPos;
+		endSeg.right = dstPos;
+		gates.Add(endSeg);
 	}
 
 	/// <summary>
 	/// 拐角点计算路径
 	/// </summary>
-	/// <param name="srcPos"></param>
-	/// <param name="dstPos"></param>
-	/// <param name="nodeList">需要包含起点和终点的node</param>
-	/// <returns></returns>
-	public IEnumerator CalcCornersCor(Vector3 srcPos, Vector3 dstPos)
+	public IEnumerator CalcCornersCor()
 	{
 		corners.Clear();
 		corners.Add(srcPos);

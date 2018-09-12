@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public partial class NavMeshDemo : MonoBehaviour
+public class NavMeshDemo : MonoBehaviour
 {
 	public Mesh manulNavMesh;
 	public MeshFilter navMeshFilter;
@@ -12,6 +12,11 @@ public partial class NavMeshDemo : MonoBehaviour
 	// public LineRenderer
 
 	NavMeshModel navMeshModel = null;
+
+	// 指示线
+	public LineRenderer redLeft;
+	public LineRenderer blueRight;
+	public LineRenderer pathLine;
 
 	public enum State
 	{
@@ -23,8 +28,45 @@ public partial class NavMeshDemo : MonoBehaviour
 	Vector3 srcPos;
 	Vector3 dstPos;
 
+	private void Start()
+	{
+		LoadNavMesh();
+	}
+
+	private void Update()
+	{
+		UpdateLines();
+	}
+
+	private void UpdateLines()
+	{
+		if (navMeshModel != null)
+		{
+			if (redLeft != null)
+			{
+				redLeft.positionCount = 2;
+				redLeft.SetPosition(0, navMeshModel.curCorner);
+				redLeft.SetPosition(1, navMeshModel.left);
+			}
+
+			if (blueRight != null)
+			{
+				blueRight.positionCount = 2;
+				blueRight.SetPosition(0, navMeshModel.curCorner);
+				blueRight.SetPosition(1, navMeshModel.right);
+			}
+
+			if (pathLine != null)
+			{
+				pathLine.positionCount = navMeshModel.corners.Count;
+				pathLine.SetPositions(navMeshModel.corners.ToArray());
+			}
+		}
+	}
+	
 	private void OnGUI()
 	{
+		/*
 		if (GUILayout.Button("Export"))
 		{
 			ExportNavMesh();
@@ -34,7 +76,8 @@ public partial class NavMeshDemo : MonoBehaviour
 		{
 			LoadNavMesh();
 		}
-		
+		*/
+
 		if (Event.current != null)
 		{
 			if (Event.current.type == EventType.MouseDown)
@@ -80,8 +123,10 @@ public partial class NavMeshDemo : MonoBehaviour
 
 		if (navMeshModel != null)
 		{
-			yield return StartCoroutine(navMeshModel.FindCor(srcPos, dstPos));
-			yield return StartCoroutine(navMeshModel.CalcCornersCor(srcPos, dstPos));
+			navMeshModel.srcPos = srcPos;
+			navMeshModel.dstPos = dstPos;
+			yield return StartCoroutine(navMeshModel.FindCor());
+			yield return StartCoroutine(navMeshModel.CalcCornersCor());
 		}
 
 		state = State.WaitSrc;
@@ -108,40 +153,6 @@ public partial class NavMeshDemo : MonoBehaviour
 			{
 				navMeshFilter.mesh = navMeshModel.NavRenderMesh;
 			}
-		}
-	}
-
-	private void OnPostRender()
-	{
-		if (Camera.main != null && navMeshModel != null)
-		{
-			if (material != null)
-			{
-				material.SetPass(0);
-			}
-
-			GL.modelview = Camera.main.worldToCameraMatrix;
-			GL.LoadProjectionMatrix(Camera.main.projectionMatrix);
-
-			GL.Begin(GL.LINES);
-			GL.Color(Color.red);
-			
-			GL.Color(Color.red);
-			GL.Vertex(navMeshModel.curCorner);
-			GL.Vertex(navMeshModel.left);
-
-			GL.Color(Color.blue);
-			GL.Vertex(navMeshModel.curCorner);
-			GL.Vertex(navMeshModel.right);
-
-			GL.Color(Color.white);
-			for (int i = 0; i < navMeshModel.corners.Count - 1; ++i)
-			{
-				GL.Vertex(navMeshModel.corners[i]);
-				GL.Vertex(navMeshModel.corners[i + 1]);
-			}
-
-			GL.End();
 		}
 	}
 }

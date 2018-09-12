@@ -2,7 +2,7 @@
 {
 	Properties
 	{
-		
+		Alpha("Alpha", Range(0, 1)) = 0.5
 	}
 	SubShader
 	{
@@ -37,8 +37,8 @@
 				float4 vertex : SV_POSITION;
 			};
 
-			sampler2D _MainTex;
-			float4 _MainTex_ST;
+			
+			float Alpha;
 			
 			v2f vert (appdata v)
 			{
@@ -51,7 +51,7 @@
 			
 			float4 frag (v2f i) : SV_Target
 			{
-				float4 col = i.color;
+				float4 col = float4(i.color.xyz, Alpha);
 				
 				UNITY_APPLY_FOG(i.fogCoord, col);
 				return col;
