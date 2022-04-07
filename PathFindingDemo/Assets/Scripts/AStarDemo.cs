@@ -178,17 +178,29 @@ public class AStarDemo : MonoBehaviour
 
 		GUILayout.Space(10);
 		PopMinMethod = GUILayout.SelectionGrid(PopMinMethod, PopMinMethodTitle, 1);
+
+        GUILayout.Space(10);
+        GUILayout.Label(HeuristicRateTitle);
+        HeuristicRateInput = GUILayout.TextField(HeuristicRateInput);
+        if (float.TryParse(HeuristicRateInput, out HeuristicRate))
+        {
+
+        }
 	}
 
 	int HeuristicMethod = 0;
 	string[] HeuristicTitle = new string[]
 	{
 		"直线距离",
-		"曼哈顿距离",
-		"曼哈顿距离乘以1.2"
+		"曼哈顿距离"
 	};
 
-	int PopMinMethod = 0;
+    float HeuristicRate = 1;
+    string HeuristicRateInput = "";
+    string HeuristicRateTitle = "估值系数";
+
+
+    int PopMinMethod = 0;
 	string[] PopMinMethodTitle = new string[]
 	{
 		"弹出F值最小",
@@ -354,7 +366,7 @@ public class AStarDemo : MonoBehaviour
 	{
 		if (HeuristicMethod == 0)
 		{
-			return Distance(a, b);
+			return Distance(a, b) * HeuristicRate;
 		}
 		else
 		{
@@ -369,12 +381,7 @@ public class AStarDemo : MonoBehaviour
 				y = t;
 			}
 			float manha = Mathf.Sqrt(2) * x + y - x;
-			if (HeuristicMethod == 2)
-			{
-				manha *= 1.2f;
-			}
-
-			return manha;
+			return manha * HeuristicRate;
 		}
 	}
 
